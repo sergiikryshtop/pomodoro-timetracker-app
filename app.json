@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Pomodoro Timer",
+    "slug": "pomodoro-timetracker-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#E53935"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pomodoro.timetracker",
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "UIBackgroundModes": ["audio"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E53935"
+      },
+      "package": "com.pomodoro.timetracker",
+      "versionCode": 1,
+      "permissions": [
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#E53935"
+        }
+      ]
+    ]
+  }
+}
+
