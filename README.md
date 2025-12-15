@@ -2,6 +2,12 @@
 
 A modern mobile application implementing the Pomodoro Technique for improved productivity and focus, built with Expo and React Native.
 
+## 📦 Installation
+
+**For end users:** Download the latest Android APK from our [Releases page](https://github.com/sergiikryshtop/pomodoro-timetracker-app/releases) or follow the detailed [Installation Guide](INSTALLATION.md).
+
+**For developers:** See the [Quick Start](#-quick-start) section below.
+
 ## ✨ Features
 
 - ⏱️ **Circular Timer**: Animated progress ring that empties clockwise from 12 o'clock as time passes
