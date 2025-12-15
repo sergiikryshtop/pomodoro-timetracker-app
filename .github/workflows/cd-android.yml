@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:  # Allow manual trigger
 
+permissions:
+  contents: write  # Required for creating releases and uploading assets
+
 jobs:
   build-android:
     name: Build Android APK
@@ -21,15 +24,6 @@ jobs:
           node-version: 18.x
           cache: 'npm'
       
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-      
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
@@ -38,27 +32,42 @@ jobs:
       
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-34 build-tools;34.0.0 ndk;26.1.10909125'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate native Android project
+        run: |
+          echo "Generating native Android project with Expo..."
+          npx expo prebuild --platform android --clean
+        env:
+          EXPO_PUBLIC_ENV: production
+      
+      - name: Make Gradlew executable
+        run: |
+          cd android
+          chmod +x gradlew
       
       - name: Build Android APK
         run: |
           echo "Building Android APK..."
-          npx expo prebuild --platform android
           cd android
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --no-daemon --stacktrace
         env:
           EXPO_PUBLIC_ENV: production
       
-      - name: Sign APK (if keystore exists)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      - name: Verify APK exists
         run: |
-          echo "Signing APK..."
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
-          cd android
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=app/release.keystore \
-            -Pandroid.injected.signing.store.password=${{ secrets.ANDROID_KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.ANDROID_KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.ANDROID_KEY_PASSWORD }}
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            echo "✅ APK built successfully"
+            ls -lh android/app/build/outputs/apk/release/app-release.apk
+          else
+            echo "❌ APK not found!"
+            find android -name "*.apk"
+            exit 1
+          fi
       
       - name: Get version info
         id: version
@@ -67,11 +76,24 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Build version: $VERSION"
       
+      - name: Rename APK with version
+        run: |
+          mkdir -p artifacts
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/pomodoro-timer-v${{ steps.version.outputs.version }}.apk
+          echo "Renamed APK to: pomodoro-timer-v${{ steps.version.outputs.version }}.apk"
+      
+      - name: Generate QR code for APK download
+        run: |
+          DOWNLOAD_URL="https://github.com/sergiikryshtop/pomodoro-timetracker-app/releases/download/v${{ steps.version.outputs.version }}/pomodoro-timer-v${{ steps.version.outputs.version }}.apk"
+          echo "Generating QR code for: $DOWNLOAD_URL"
+          curl -o artifacts/qr-code.png "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=$DOWNLOAD_URL"
+          echo "QR code saved to artifacts/qr-code.png"
+      
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: pomodoro-timer-v${{ steps.version.outputs.version }}-android
-          path: android/app/build/outputs/apk/release/*.apk
+          path: artifacts/pomodoro-timer-v${{ steps.version.outputs.version }}.apk
           retention-days: 30
       
       - name: Create Release
@@ -82,7 +104,49 @@ jobs:
           name: Release v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
-          files: android/app/build/outputs/apk/release/*.apk
+          files: |
+            artifacts/pomodoro-timer-v${{ steps.version.outputs.version }}.apk
+            artifacts/qr-code.png
+          body: |
+            ## 📱 Pomodoro Timer v${{ steps.version.outputs.version }}
+            
+            ### 📥 Quick Install (QR Code)
+            
+            **Scan this QR code with your Android device to download and install:**
+            
+            ![Download APK](https://github.com/sergiikryshtop/pomodoro-timetracker-app/releases/download/v${{ steps.version.outputs.version }}/qr-code.png)
+            
+            Or download manually below ⬇️
+            
+            ### 📥 Installation
+            
+            Download the APK below and install on your Android device.
+            
+            See [INSTALLATION.md](https://github.com/sergiikryshtop/pomodoro-timetracker-app/blob/main/INSTALLATION.md) for detailed installation instructions.
+            
+            ### ✨ Features
+            
+            - **Timer Management**: Work (25min), Short Break (5min), Long Break (15min)
+            - **Session Tracking**: Automatic session persistence with pause duration calculation
+            - **Feedback System**: Audio, haptic, and notification alerts on completion
+            - **Reports & Analytics**: Date-range aggregation with Victory Native charts
+            - **Task Management**: Autocomplete suggestions stored via AsyncStorage
+            - **Customizable Settings**: Durations, sounds, vibration preferences via SecureStore
+            
+            ### 🏗️ Technical Details
+            
+            - **Framework**: Expo SDK with React Native
+            - **State Management**: TimerContext (React hooks)
+            - **Storage**: Dual strategy (AsyncStorage for sessions/tasks, SecureStore for settings)
+            - **Platform**: Android (Minimum API 21 - Android 5.0)
+            - **Build Type**: Release APK (unsigned)
+            - **Architecture**: Universal (ARM64, ARMv7, x86)
+            
+            ### 🔧 Build Information
+            
+            - **Workflow Run**: #${{ github.run_number }}
+            - **Commit**: ${{ github.sha }}
+            - **Build Time**: ${{ github.event.head_commit.timestamp }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -93,10 +157,16 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Version**: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Platform**: Android" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Type**: Release APK" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Type**: Release APK (Native Build)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Time**: ~10-15 minutes" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "The APK is available in the workflow artifacts section." >> $GITHUB_STEP_SUMMARY
+          echo "The APK is available in:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Workflow artifacts section" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ GitHub Release (attached as asset)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📥 Download" >> $GITHUB_STEP_SUMMARY
+          echo "Users can download directly from the [Releases page](https://github.com/sergiikryshtop/pomodoro-timetracker-app/releases)" >> $GITHUB_STEP_SUMMARY
 
   notify:
     name: Notify Build Status

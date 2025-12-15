@@ -1,5 +1,9 @@
 # Pomodoro Timer & Focus Booster
 
+[![CI Pipeline](https://github.com/sergiikryshtop/pomodoro-timetracker-app/actions/workflows/ci.yml/badge.svg)](https://github.com/sergiikryshtop/pomodoro-timetracker-app/actions/workflows/ci.yml)
+[![CD - Android Build](https://github.com/sergiikryshtop/pomodoro-timetracker-app/actions/workflows/cd-android.yml/badge.svg)](https://github.com/sergiikryshtop/pomodoro-timetracker-app/actions/workflows/cd-android.yml)
+[![codecov](https://codecov.io/gh/sergiikryshtop/pomodoro-timetracker-app/branch/main/graph/badge.svg)](https://codecov.io/gh/sergiikryshtop/pomodoro-timetracker-app)
+
 A modern mobile application implementing the Pomodoro Technique for improved productivity and focus, built with Expo and React Native.
 
 ## 📦 Installation
