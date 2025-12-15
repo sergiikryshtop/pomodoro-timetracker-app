@@ -48,7 +48,7 @@ jobs:
           EXPO_PUBLIC_ENV: production
       
       - name: Sign APK (if keystore exists)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         run: |
           echo "Signing APK..."
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
