@@ -7,7 +7,7 @@
     "userInterfaceStyle": "automatic",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#E53935"
+      "backgroundColor": "#6366F1"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E53935"
+        "backgroundColor": "#6366F1"
       },
       "package": "com.pomodoro.timetracker",
       "versionCode": 1,
@@ -38,7 +38,7 @@
       [
         "expo-notifications",
         {
-          "color": "#E53935"
+          "color": "#6366F1"
         }
       ]
     ]

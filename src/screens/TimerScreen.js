@@ -23,6 +23,10 @@ const TimerScreen = () => {
     settings,
   } = useTimer();
 
+  const getActiveColor = () => {
+    return theme.colors.primary;
+  };
+
   const handleStartPause = () => {
     if (timerState === 'idle' || timerState === 'completed') {
       if (intervalType === 'work') {
@@ -159,7 +163,8 @@ const TimerScreen = () => {
 
       <FAB
         icon="pencil"
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        style={[styles.fab, { backgroundColor: getActiveColor() }]}
+        color="#FFFFFF"
         onPress={() => navigation.navigate('TaskInput')}
         label="Task"
       />
