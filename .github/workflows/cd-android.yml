@@ -82,6 +82,13 @@ jobs:
           cp android/app/build/outputs/apk/release/app-release.apk artifacts/pomodoro-timer-v${{ steps.version.outputs.version }}.apk
           echo "Renamed APK to: pomodoro-timer-v${{ steps.version.outputs.version }}.apk"
       
+      - name: Generate QR code for APK download
+        run: |
+          DOWNLOAD_URL="https://github.com/sergiikryshtop/pomodoro-timetracker-app/releases/download/v${{ steps.version.outputs.version }}/pomodoro-timer-v${{ steps.version.outputs.version }}.apk"
+          echo "Generating QR code for: $DOWNLOAD_URL"
+          curl -o artifacts/qr-code.png "https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=$DOWNLOAD_URL"
+          echo "QR code saved to artifacts/qr-code.png"
+      
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -97,9 +104,19 @@ jobs:
           name: Release v${{ steps.version.outputs.version }}
           draft: false
           prerelease: false
-          files: artifacts/pomodoro-timer-v${{ steps.version.outputs.version }}.apk
+          files: |
+            artifacts/pomodoro-timer-v${{ steps.version.outputs.version }}.apk
+            artifacts/qr-code.png
           body: |
             ## 📱 Pomodoro Timer v${{ steps.version.outputs.version }}
+            
+            ### 📥 Quick Install (QR Code)
+            
+            **Scan this QR code with your Android device to download and install:**
+            
+            ![Download APK](https://github.com/sergiikryshtop/pomodoro-timetracker-app/releases/download/v${{ steps.version.outputs.version }}/qr-code.png)
+            
+            Or download manually below ⬇️
             
             ### 📥 Installation
             
