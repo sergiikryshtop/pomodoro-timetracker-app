@@ -17,7 +17,9 @@
       "bundleIdentifier": "com.pomodoro.timetracker",
       "buildNumber": "1.0.0",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -41,7 +43,11 @@
           "color": "#6366F1"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4e34aeb7-e987-4444-a332-894d69a7aabb"
+      }
+    }
   }
 }
-
