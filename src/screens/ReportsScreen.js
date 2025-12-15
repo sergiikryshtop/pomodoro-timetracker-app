@@ -43,42 +43,53 @@ const ReportsScreen = () => {
   }, [viewType, selectedDate]);
 
   const loadSessions = async () => {
-    let startDate, endDate;
+    try {
+      let startDate, endDate;
 
-    if (viewType === 'day') {
-      startDate = new Date(selectedDate);
-      startDate.setHours(0, 0, 0, 0);
-      endDate = new Date(selectedDate);
-      endDate.setHours(23, 59, 59, 999);
-    } else if (viewType === 'week') {
-      startDate = startOfWeek(selectedDate, { weekStartsOn: 1 });
-      endDate = endOfWeek(selectedDate, { weekStartsOn: 1 });
-    } else {
-      startDate = startOfMonth(selectedDate);
-      endDate = endOfMonth(selectedDate);
+      if (viewType === 'day') {
+        startDate = new Date(selectedDate);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(selectedDate);
+        endDate.setHours(23, 59, 59, 999);
+      } else if (viewType === 'week') {
+        startDate = startOfWeek(selectedDate, { weekStartsOn: 1 });
+        endDate = endOfWeek(selectedDate, { weekStartsOn: 1 });
+      } else {
+        startDate = startOfMonth(selectedDate);
+        endDate = endOfMonth(selectedDate);
+      }
+
+      const loadedSessions = await sessionStorage.getSessionsByDateRange(startDate, endDate);
+      setSessions(loadedSessions || []);
+      calculateStats(loadedSessions || []);
+    } catch (error) {
+      console.error('Error loading sessions:', error);
+      setSessions([]);
+      calculateStats([]);
     }
-
-    const loadedSessions = await sessionStorage.getSessionsByDateRange(startDate, endDate);
-    setSessions(loadedSessions);
-    calculateStats(loadedSessions);
   };
 
   const calculateStats = (sessionsData) => {
-    const workSessions = sessionsData.filter(s => s.type === 'work');
-    const totalPomodoros = workSessions.length;
-    const totalWorkTime = workSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
-    const tasks = {};
+    try {
+      const workSessions = (sessionsData || []).filter(s => s?.type === 'work');
+      const totalPomodoros = workSessions.length;
+      const totalWorkTime = workSessions.reduce((sum, s) => sum + (s.duration || 0), 0);
+      const tasks = {};
 
-    workSessions.forEach(session => {
-      const taskName = session.taskName || 'Unnamed Task';
-      if (!tasks[taskName]) {
-        tasks[taskName] = { count: 0, time: 0 };
-      }
-      tasks[taskName].count += 1;
-      tasks[taskName].time += session.duration || 0;
-    });
+      workSessions.forEach(session => {
+        const taskName = session.taskName || 'Unnamed Task';
+        if (!tasks[taskName]) {
+          tasks[taskName] = { count: 0, time: 0 };
+        }
+        tasks[taskName].count += 1;
+        tasks[taskName].time += session.duration || 0;
+      });
 
-    setStats({ totalPomodoros, totalWorkTime, tasks });
+      setStats({ totalPomodoros, totalWorkTime, tasks });
+    } catch (error) {
+      console.error('Error calculating stats:', error);
+      setStats({ totalPomodoros: 0, totalWorkTime: 0, tasks: {} });
+    }
   };
 
   const formatTime = (seconds) => {
@@ -103,60 +114,84 @@ const ReportsScreen = () => {
   };
 
   const getTaskDistributionData = () => {
-    const entries = Object.entries(stats.tasks)
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 10)
-      .map(([name, data], index) => ({
-        x: name.length > 15 ? name.substring(0, 15) + '...' : name,
-        y: data.count,
-        label: `${data.count}`,
-      }));
-    return entries;
+    try {
+      const entries = Object.entries(stats.tasks || {})
+        .sort((a, b) => (b[1]?.count || 0) - (a[1]?.count || 0))
+        .slice(0, 10)
+        .map(([name, data], index) => ({
+          x: name.length > 15 ? name.substring(0, 15) + '...' : name,
+          y: data?.count || 0,
+          label: `${data?.count || 0}`,
+        }))
+        .filter(item => item.y > 0);
+      return entries;
+    } catch (error) {
+      console.error('Error getting task distribution:', error);
+      return [];
+    }
   };
 
   const getProductivityData = () => {
-    if (viewType === 'week') {
-      const weekDays = eachDayOfInterval({
-        start: startOfWeek(selectedDate, { weekStartsOn: 1 }),
-        end: endOfWeek(selectedDate, { weekStartsOn: 1 }),
-      });
-      return weekDays.map(day => {
-        const daySessions = sessions.filter(s => {
-          const sessionDate = new Date(s.startTime);
-          return sessionDate.toDateString() === day.toDateString();
+    try {
+      if (viewType === 'week') {
+        const weekDays = eachDayOfInterval({
+          start: startOfWeek(selectedDate, { weekStartsOn: 1 }),
+          end: endOfWeek(selectedDate, { weekStartsOn: 1 }),
         });
-        return {
-          x: format(day, 'EEE'),
-          y: daySessions.length,
-        };
-      });
+        return weekDays.map(day => {
+          const daySessions = (sessions || []).filter(s => {
+            try {
+              const sessionDate = new Date(s.startTime);
+              return sessionDate.toDateString() === day.toDateString();
+            } catch {
+              return false;
+            }
+          });
+          return {
+            x: format(day, 'EEE'),
+            y: daySessions.length,
+          };
+        });
     } else if (viewType === 'month') {
       // Group by week for monthly view
       const weeks = [];
       const start = startOfMonth(selectedDate);
       const end = endOfMonth(selectedDate);
-      let current = start;
+      let current = new Date(start);
+      
       while (current <= end) {
         const weekEnd = new Date(current);
-        weekEnd.setDate(current.getDate() + 6);
-        if (weekEnd > end) weekEnd.setTime(end.getTime());
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        const actualWeekEnd = weekEnd > end ? end : weekEnd;
         
-        const weekSessions = sessions.filter(s => {
-          const sessionDate = new Date(s.startTime);
-          return sessionDate >= current && sessionDate <= weekEnd;
+        const weekSessions = (sessions || []).filter(s => {
+          try {
+            const sessionDate = new Date(s.startTime);
+            return sessionDate >= current && sessionDate <= actualWeekEnd;
+          } catch {
+            return false;
+          }
         });
         
         weeks.push({
-          x: `Week ${weeks.length + 1}`,
+          x: `W${weeks.length + 1}`,
           y: weekSessions.length,
         });
         
-        current = new Date(weekEnd);
+        // Move to next week
+        current = new Date(actualWeekEnd);
         current.setDate(current.getDate() + 1);
+        
+        // Safety check to prevent infinite loops
+        if (weeks.length > 6) break;
       }
       return weeks;
     }
     return [];
+    } catch (error) {
+      console.error('Error getting productivity data:', error);
+      return [];
+    }
   };
 
   return (

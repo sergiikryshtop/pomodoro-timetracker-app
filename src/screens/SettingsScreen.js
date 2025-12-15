@@ -66,9 +66,16 @@ const SettingsScreen = () => {
               mode="outlined"
               value={localSettings.workDuration?.toString() || '25'}
               onChangeText={(text) => {
-                const value = parseInt(text) || 25;
-                if (value >= 1 && value <= 60) {
+                const value = parseInt(text);
+                if (!isNaN(value) && value >= 1 && value <= 60) {
                   handleSettingChange('workDuration', value);
+                } else if (text === '') {
+                  setLocalSettings({ ...localSettings, workDuration: '' });
+                }
+              }}
+              onBlur={() => {
+                if (!localSettings.workDuration || localSettings.workDuration < 1 || localSettings.workDuration > 60) {
+                  handleSettingChange('workDuration', 25);
                 }
               }}
               keyboardType="numeric"
@@ -89,9 +96,16 @@ const SettingsScreen = () => {
               mode="outlined"
               value={localSettings.shortBreakDuration?.toString() || '5'}
               onChangeText={(text) => {
-                const value = parseInt(text) || 5;
-                if (value >= 1 && value <= 30) {
+                const value = parseInt(text);
+                if (!isNaN(value) && value >= 1 && value <= 30) {
                   handleSettingChange('shortBreakDuration', value);
+                } else if (text === '') {
+                  setLocalSettings({ ...localSettings, shortBreakDuration: '' });
+                }
+              }}
+              onBlur={() => {
+                if (!localSettings.shortBreakDuration || localSettings.shortBreakDuration < 1 || localSettings.shortBreakDuration > 30) {
+                  handleSettingChange('shortBreakDuration', 5);
                 }
               }}
               keyboardType="numeric"
@@ -112,9 +126,16 @@ const SettingsScreen = () => {
               mode="outlined"
               value={localSettings.longBreakDuration?.toString() || '15'}
               onChangeText={(text) => {
-                const value = parseInt(text) || 15;
-                if (value >= 1 && value <= 60) {
+                const value = parseInt(text);
+                if (!isNaN(value) && value >= 1 && value <= 60) {
                   handleSettingChange('longBreakDuration', value);
+                } else if (text === '') {
+                  setLocalSettings({ ...localSettings, longBreakDuration: '' });
+                }
+              }}
+              onBlur={() => {
+                if (!localSettings.longBreakDuration || localSettings.longBreakDuration < 1 || localSettings.longBreakDuration > 60) {
+                  handleSettingChange('longBreakDuration', 15);
                 }
               }}
               keyboardType="numeric"
@@ -135,9 +156,16 @@ const SettingsScreen = () => {
               mode="outlined"
               value={localSettings.pomodorosUntilLongBreak?.toString() || '4'}
               onChangeText={(text) => {
-                const value = parseInt(text) || 4;
-                if (value >= 1 && value <= 10) {
+                const value = parseInt(text);
+                if (!isNaN(value) && value >= 1 && value <= 10) {
                   handleSettingChange('pomodorosUntilLongBreak', value);
+                } else if (text === '') {
+                  setLocalSettings({ ...localSettings, pomodorosUntilLongBreak: '' });
+                }
+              }}
+              onBlur={() => {
+                if (!localSettings.pomodorosUntilLongBreak || localSettings.pomodorosUntilLongBreak < 1 || localSettings.pomodorosUntilLongBreak > 10) {
+                  handleSettingChange('pomodorosUntilLongBreak', 4);
                 }
               }}
               keyboardType="numeric"

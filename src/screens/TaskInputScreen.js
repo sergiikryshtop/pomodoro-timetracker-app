@@ -28,15 +28,25 @@ const TaskInputScreen = ({ navigation }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    loadSuggestions();
+    const timer = setTimeout(() => {
+      loadSuggestions();
+    }, 300); // Debounce suggestions
+
+    return () => clearTimeout(timer);
   }, [taskInput]);
 
   const loadSuggestions = async () => {
-    if (taskInput.length >= 3) {
-      const suggs = await taskStorage.getSuggestions(taskInput, 10);
-      setSuggestions(suggs);
-      setShowSuggestions(suggs.length > 0);
-    } else {
+    try {
+      if (taskInput.length >= 3) {
+        const suggs = await taskStorage.getSuggestions(taskInput, 10);
+        setSuggestions(suggs);
+        setShowSuggestions(suggs.length > 0);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Error loading suggestions:', error);
       setSuggestions([]);
       setShowSuggestions(false);
     }

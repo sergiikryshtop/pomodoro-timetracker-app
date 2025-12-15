@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
@@ -35,6 +35,7 @@ export const TimerProvider = ({ children }) => {
   useEffect(() => {
     loadSettings();
     configureNotifications();
+    requestNotificationPermissions();
   }, []);
 
   // Load settings
@@ -55,69 +56,32 @@ export const TimerProvider = ({ children }) => {
     });
   };
 
-  // Timer interval
-  useEffect(() => {
-    if (timerState === 'running') {
-      intervalRef.current = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            handleTimerComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+  // Request notification permissions
+  const requestNotificationPermissions = async () => {
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+      
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
       }
+      
+      if (finalStatus !== 'granted') {
+        console.warn('Notification permissions not granted');
+      }
+    } catch (error) {
+      console.error('Error requesting notification permissions:', error);
     }
+  };
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [timerState]);
-
-  // Handle app state changes for background timer
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active' &&
-        timerState === 'running'
-      ) {
-        // App came to foreground, recalculate time
-        if (backgroundTimeRef.current) {
-          const timeSpent = Math.floor((Date.now() - backgroundTimeRef.current) / 1000);
-          setTimeRemaining(prev => Math.max(0, prev - timeSpent));
-        }
-      } else if (
-        appState.current === 'active' &&
-        nextAppState.match(/inactive|background/) &&
-        timerState === 'running'
-      ) {
-        // App went to background, save current time
-        backgroundTimeRef.current = Date.now();
-      }
-
-      appState.current = nextAppState;
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, [timerState]);
-
-  const handleTimerComplete = async () => {
+  // Handle timer completion with useCallback to prevent stale closures
+  const handleTimerComplete = useCallback(async () => {
     setTimerState('completed');
     
     // Play sound
     if (settings?.soundEnabled) {
       try {
-        // Use system notification sound if custom sound fails
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       } catch (error) {
         console.error('Error configuring audio:', error);
@@ -126,28 +90,36 @@ export const TimerProvider = ({ children }) => {
 
     // Vibrate
     if (settings?.vibrationEnabled) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      try {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } catch (error) {
+        console.error('Error with haptics:', error);
+      }
     }
 
     // Send notification
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: intervalType === 'work' ? 'Pomodoro Complete! 🎉' : 'Break Complete!',
-        body: intervalType === 'work' 
-          ? 'Time for a break!' 
-          : 'Ready to get back to work?',
-        sound: true,
-      },
-      trigger: null,
-    });
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: intervalType === 'work' ? 'Pomodoro Complete! 🎉' : 'Break Complete!',
+          body: intervalType === 'work' 
+            ? 'Time for a break!' 
+            : 'Ready to get back to work?',
+          sound: true,
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      console.error('Error scheduling notification:', error);
+    }
 
     // Save session if work interval
-    if (intervalType === 'work') {
+    if (intervalType === 'work' && startTime) {
       const session = {
         id: Date.now().toString(),
         startTime: startTime.toISOString(),
         endTime: new Date().toISOString(),
-        duration: settings.workDuration * 60 - totalPausedTime,
+        duration: (settings?.workDuration || 25) * 60 - totalPausedTime,
         taskName: currentTask,
         comment: currentComment,
         type: 'work',
@@ -174,7 +146,73 @@ export const TimerProvider = ({ children }) => {
         }, 2000);
       }
     }
-  };
+  }, [settings, intervalType, startTime, totalPausedTime, currentTask, currentComment, completedPomodoros]);
+
+  // Timer interval
+  useEffect(() => {
+    if (timerState === 'running') {
+      intervalRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            handleTimerComplete();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [timerState, handleTimerComplete]);
+
+  // Handle app state changes for background timer
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        // App came to foreground, recalculate time only if timer was running
+        if (backgroundTimeRef.current) {
+          const timeSpent = Math.floor((Date.now() - backgroundTimeRef.current) / 1000);
+          setTimeRemaining(prev => {
+            const newTime = Math.max(0, prev - timeSpent);
+            if (newTime === 0 && prev > 0) {
+              // Timer completed while in background
+              handleTimerComplete();
+            }
+            return newTime;
+          });
+          backgroundTimeRef.current = null;
+        }
+      } else if (
+        appState.current === 'active' &&
+        nextAppState.match(/inactive|background/)
+      ) {
+        // App went to background, save current time only if running
+        if (timerState === 'running') {
+          backgroundTimeRef.current = Date.now();
+        }
+      }
+
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [timerState, handleTimerComplete]);
+
+
 
   const startTimer = () => {
     if (timerState === 'idle' || timerState === 'completed') {

@@ -195,6 +195,10 @@ export const settingsStorage = {
     }
   },
 
+  async setSettings(settings) {
+    return this.saveSettings(settings);
+  },
+
   async getSettings() {
     try {
       const settings = await secureStorage.getItem(STORAGE_KEYS.SETTINGS);

@@ -1,11 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
   useSharedValue,
   withTiming,
-  useEffect as reanimatedUseEffect,
 } from 'react-native-reanimated';
 import { Text, useTheme } from 'react-native-paper';
 import { useTimer } from '../context/TimerContext';
@@ -20,21 +19,23 @@ const CircularTimer = ({ size = 300, strokeWidth = 12 }) => {
   const radius = (size - strokeWidth) / 2;
 
   // Update progress animation
-  reanimatedUseEffect(() => {
+  useEffect(() => {
     progress.value = withTiming(getProgress(), { duration: 300 });
-  }, [timeRemaining]);
+  }, [timeRemaining, getProgress]);
 
   const animatedProps = useAnimatedProps(() => {
-    const strokeDashoffset = circumference * (1 - progress.value);
+    // progress.value goes from 0 (start) to 1 (finish)
+    // We want to show remaining time, so invert it
+    const remaining = 1 - progress.value;
+    // strokeDashoffset: 0 = fully visible, circumference = fully hidden
+    const strokeDashoffset = circumference * (1 - remaining);
     return {
       strokeDashoffset,
     };
   });
 
   const getColor = () => {
-    if (intervalType === 'work') return theme.colors.workColor;
-    if (intervalType === 'longBreak') return theme.colors.longBreakColor;
-    return theme.colors.breakColor;
+    return theme.colors.primary;
   };
 
   return (
@@ -45,11 +46,12 @@ const CircularTimer = ({ size = 300, strokeWidth = 12 }) => {
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={theme.colors.surface}
+          stroke={theme.colors.outline}
           strokeWidth={strokeWidth}
           fill="transparent"
+          opacity={0.2}
         />
-        {/* Progress circle */}
+        {/* Progress circle - starts at 12 o'clock and empties clockwise */}
         <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
