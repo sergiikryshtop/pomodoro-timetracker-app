@@ -10,7 +10,8 @@ module.exports = {
     'src/**/*.{js,jsx}',
     '!src/**/*.test.{js,jsx}',
     '!**/node_modules/**',
-    '!**/vendor/**'
+    '!**/vendor/**',
+    '!src/theme.js'
   ],
   coverageThreshold: {
     global: {

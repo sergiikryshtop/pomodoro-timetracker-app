@@ -35,8 +35,9 @@ jest.mock('expo-secure-store', () => ({
 // Mock Notifications
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
-  scheduleNotificationAsync: jest.fn(),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
   cancelAllScheduledNotificationsAsync: jest.fn(),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
   requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' }))
 }));
 
