@@ -50,11 +50,9 @@ jobs:
           SETTINGS_FILE=android/settings.gradle
           if [ -f "$SETTINGS_FILE" ]; then
             echo "Patching $SETTINGS_FILE for com.facebook.react.settings plugin..."
-            # Insert pluginManagement and includeBuild if missing
-            if ! grep -q "com.facebook.react.settings" "$SETTINGS_FILE"; then
-              cat << 'EOF' >> "$SETTINGS_FILE"
+            if ! grep -q "pluginManagement" "$SETTINGS_FILE"; then
+              cat >> "$SETTINGS_FILE" << 'EOF'
 
-// --- Added by CI to ensure RN Gradle plugin resolution ---
 pluginManagement {
   repositories {
     gradlePluginPortal()
@@ -64,10 +62,8 @@ pluginManagement {
   }
   includeBuild("../node_modules/react-native-gradle-plugin")
 }
-// --- End added block ---
 EOF
             fi
-            echo "Patched settings.gradle:" && tail -n +1 "$SETTINGS_FILE" | sed -n '1,120p'
           else
             echo "android/settings.gradle not found" && exit 1
           fi
