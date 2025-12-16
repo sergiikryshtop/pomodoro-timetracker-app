@@ -62,29 +62,38 @@ jobs:
           fi
           
           echo "📝 Checking if settings.gradle needs patching..."
+          
+          # ALWAYS remove the failing plugins block first
+          # This block causes "Plugin [id: 'com.facebook.react.settings'] was not found"
+          # because the plugin is not available in the installed @react-native/gradle-plugin version (0.72.x)
+          if grep -q "com.facebook.react.settings" "$SETTINGS_FILE"; then
+            echo "⚠️ Found problematic com.facebook.react.settings plugin. Removing plugins block..."
+            sed -i '/plugins {/,/}/d' "$SETTINGS_FILE"
+            echo "✅ Removed plugins block"
+          else
+            echo "ℹ️ No com.facebook.react.settings plugin found"
+          fi
+
           if grep -q "pluginManagement" "$SETTINGS_FILE"; then
             echo "✅ pluginManagement already exists"
-            exit 0
+          else
+            echo "📝 Prepending pluginManagement block..."
+            TEMP_FILE="${SETTINGS_FILE}.new"
+            
+            echo 'pluginManagement {' > "$TEMP_FILE"
+            echo '    repositories {' >> "$TEMP_FILE"
+            echo '        gradlePluginPortal()' >> "$TEMP_FILE"
+            echo '        mavenCentral()' >> "$TEMP_FILE"
+            echo '        google()' >> "$TEMP_FILE"
+            echo '    }' >> "$TEMP_FILE"
+            echo '    includeBuild("../node_modules/@react-native/gradle-plugin")' >> "$TEMP_FILE"
+            echo '}' >> "$TEMP_FILE"
+            echo '' >> "$TEMP_FILE"
+            
+            cat "$SETTINGS_FILE" >> "$TEMP_FILE"
+            mv "$TEMP_FILE" "$SETTINGS_FILE"
+            echo "✅ Added pluginManagement"
           fi
-          
-          echo "📝 Prepending pluginManagement block..."
-          TEMP_FILE="${SETTINGS_FILE}.new"
-          
-          echo 'pluginManagement {' > "$TEMP_FILE"
-          echo '    repositories {' >> "$TEMP_FILE"
-          echo '        gradlePluginPortal()' >> "$TEMP_FILE"
-          echo '        mavenCentral()' >> "$TEMP_FILE"
-          echo '        google()' >> "$TEMP_FILE"
-          echo '    }' >> "$TEMP_FILE"
-          echo '    includeBuild("../node_modules/@react-native/gradle-plugin")' >> "$TEMP_FILE"
-          echo '}' >> "$TEMP_FILE"
-          echo '' >> "$TEMP_FILE"
-          
-          # Append original content but remove the failing plugins block
-          cat "$SETTINGS_FILE" | sed '/plugins {/,/}/d' >> "$TEMP_FILE"
-          
-          mv "$TEMP_FILE" "$SETTINGS_FILE"
-          echo "✅ Patched settings.gradle (added pluginManagement and removed failing plugins block)"
       
       - name: Debug - Show patched settings.gradle
         run: |
