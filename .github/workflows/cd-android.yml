@@ -48,46 +48,11 @@ jobs:
         env:
           EXPO_PUBLIC_ENV: production
 
-      - name: Debug - Show original settings.gradle
+      - name: Force Gradle 8.8 for React Native 0.76 compatibility
         run: |
-          echo "=== Original settings.gradle (first 30 lines) ==="
-          head -30 android/settings.gradle || cat android/settings.gradle
-      
-      - name: Overwrite Gradle settings
-        run: |
-          SETTINGS_FILE=android/settings.gradle
-          echo "📝 Overwriting settings.gradle with fixed content..."
-          
-          # We overwrite the file completely to avoid sed patching issues
-          echo 'pluginManagement {' > "$SETTINGS_FILE"
-          echo '    repositories {' >> "$SETTINGS_FILE"
-          echo '        gradlePluginPortal()' >> "$SETTINGS_FILE"
-          echo '        mavenCentral()' >> "$SETTINGS_FILE"
-          echo '        google()' >> "$SETTINGS_FILE"
-          echo '    }' >> "$SETTINGS_FILE"
-          echo '    includeBuild("../node_modules/@react-native/gradle-plugin")' >> "$SETTINGS_FILE"
-          echo '}' >> "$SETTINGS_FILE"
-          echo '' >> "$SETTINGS_FILE"
-          echo "rootProject.name = 'pomodoro-timetracker-app'" >> "$SETTINGS_FILE"
-          echo '' >> "$SETTINGS_FILE"
-          echo 'apply from: new File(["node", "--print", "require.resolve('\''expo/package.json'\'')"].execute(null, rootDir).text.trim(), "../scripts/autolinking.gradle")' >> "$SETTINGS_FILE"
-          echo 'useExpoModules()' >> "$SETTINGS_FILE"
-          echo '' >> "$SETTINGS_FILE"
-          echo "include ':app'" >> "$SETTINGS_FILE"
-          echo "includeBuild('../node_modules/@react-native/gradle-plugin')" >> "$SETTINGS_FILE"
-          
-          echo "✅ Overwrote settings.gradle"
-      
-      - name: Debug - Show patched settings.gradle
-        run: |
-          echo "=== Patched settings.gradle (first 30 lines) ==="
-          head -30 android/settings.gradle
-
-      - name: Force Gradle 8.6 for Kotlin DSL compatibility
-        run: |
-          echo "Updating Gradle wrapper to 8.6..."
+          echo "Updating Gradle wrapper to 8.8..."
           if [ -f android/gradle/wrapper/gradle-wrapper.properties ]; then
-            sed -i 's#distributionUrl=.*#distributionUrl=https\://services.gradle.org/distributions/gradle-8.6-bin.zip#g' android/gradle/wrapper/gradle-wrapper.properties
+            sed -i 's#distributionUrl=.*#distributionUrl=https\://services.gradle.org/distributions/gradle-8.8-bin.zip#g' android/gradle/wrapper/gradle-wrapper.properties
             cat android/gradle/wrapper/gradle-wrapper.properties
           else
             echo "gradle-wrapper.properties not found" && exit 1
