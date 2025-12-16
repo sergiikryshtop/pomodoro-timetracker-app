@@ -48,11 +48,11 @@ jobs:
         env:
           EXPO_PUBLIC_ENV: production
 
-      - name: Force Gradle 8.7 for React Native 0.76 compatibility
+      - name: Force Gradle 8.5 for Expo Autolinking compatibility
         run: |
-          echo "Updating Gradle wrapper to 8.7..."
+          echo "Updating Gradle wrapper to 8.5..."
           if [ -f android/gradle/wrapper/gradle-wrapper.properties ]; then
-            sed -i 's#distributionUrl=.*#distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip#g' android/gradle/wrapper/gradle-wrapper.properties
+            sed -i 's#distributionUrl=.*#distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip#g' android/gradle/wrapper/gradle-wrapper.properties
             cat android/gradle/wrapper/gradle-wrapper.properties
           else
             echo "gradle-wrapper.properties not found" && exit 1
