@@ -79,3 +79,13 @@ jest.mock('react-native-reanimated', () => ({
 
 // Silence the warning: Animated: `useNativeDriver` is not supported
 // jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const { View } = require('react-native');
+  return {
+    MaterialCommunityIcons: (props) => <View {...props} testID="icon" />,
+    Ionicons: (props) => <View {...props} testID="icon" />,
+    FontAwesome: (props) => <View {...props} testID="icon" />,
+  };
+});

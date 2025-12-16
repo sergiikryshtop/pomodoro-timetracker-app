@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ReportsScreen from '../ReportsScreen';
 import { sessionStorage } from '../../utils/storage';
 
@@ -44,7 +45,12 @@ const mockTheme = {
 
 const renderWithProviders = (component) => {
   return render(
-    <PaperProvider theme={mockTheme}>
+    <PaperProvider 
+      theme={mockTheme}
+      settings={{
+        icon: props => <MaterialCommunityIcons {...props} />,
+      }}
+    >
       {component}
     </PaperProvider>
   );
