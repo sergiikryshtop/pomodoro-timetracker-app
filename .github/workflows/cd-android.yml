@@ -80,9 +80,11 @@ jobs:
           echo '}' >> "$TEMP_FILE"
           echo '' >> "$TEMP_FILE"
           
-          cat "$SETTINGS_FILE" >> "$TEMP_FILE"
+          # Append original content but remove the failing plugins block
+          cat "$SETTINGS_FILE" | sed '/plugins {/,/}/d' >> "$TEMP_FILE"
+          
           mv "$TEMP_FILE" "$SETTINGS_FILE"
-          echo "✅ Patched settings.gradle"
+          echo "✅ Patched settings.gradle (added pluginManagement and removed failing plugins block)"
       
       - name: Debug - Show patched settings.gradle
         run: |
