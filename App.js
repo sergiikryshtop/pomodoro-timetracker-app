@@ -6,7 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import TimerScreen from './src/screens/TimerScreen';
 import ReportsScreen from './src/screens/ReportsScreen';
@@ -38,7 +38,12 @@ function TimerStack() {
 function App() {
   return (
     <SafeAreaProvider>
-      <PaperProvider theme={theme}>
+      <PaperProvider 
+        theme={theme}
+        settings={{
+          icon: props => <MaterialCommunityIcons {...props} />,
+        }}
+      >
         <TimerProvider>
           <NavigationContainer>
             <StatusBar style="auto" />
@@ -55,7 +60,7 @@ function App() {
                     iconName = focused ? 'cog' : 'cog-outline';
                   }
 
-                  return <Icon name={iconName} size={size} color={color} />;
+                  return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
                 },
                 tabBarActiveTintColor: theme.colors.primary,
                 tabBarInactiveTintColor: 'gray',
