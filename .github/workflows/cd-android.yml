@@ -1,4 +1,5 @@
 name: CD - Android Build
+run-name: CD - Android Build – ${{ github.ref_name }}
 
 on:
   push:
