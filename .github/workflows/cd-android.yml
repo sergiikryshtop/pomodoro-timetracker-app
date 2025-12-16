@@ -69,7 +69,9 @@ jobs:
           if grep -q "com.facebook.react.settings" "$SETTINGS_FILE"; then
             echo "⚠️ Found problematic com.facebook.react.settings plugin. Removing plugins block..."
             sed -i '/plugins {/,/}/d' "$SETTINGS_FILE"
-            echo "✅ Removed plugins block"
+            # Also remove the configuration block that uses the plugin class
+            sed -i '/com.facebook.react.ReactSettingsExtension/d' "$SETTINGS_FILE"
+            echo "✅ Removed plugins block and configuration"
           else
             echo "ℹ️ No com.facebook.react.settings plugin found"
           fi
