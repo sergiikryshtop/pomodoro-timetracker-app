@@ -1,0 +1,140 @@
+name: CD - iOS Build (Simulator)
+run-name: CD - iOS Build – ${{ github.ref_name }}
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+      - fix/*
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-ios:
+    name: Build iOS Simulator App
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main' ||
+      contains(github.event.head_commit.modified, '.github/workflows/cd-ios.yml') ||
+      contains(github.event.head_commit.added, '.github/workflows/cd-ios.yml')
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate native iOS project
+        run: |
+          echo "Generating native iOS project with Expo..."
+          npx expo prebuild --platform ios --clean
+        env:
+          EXPO_PUBLIC_ENV: production
+
+      - name: Build iOS App for Simulator
+        run: |
+          echo "Building iOS App for Simulator..."
+          xcodebuild -workspace ios/PomodoroTimer.xcworkspace \
+            -scheme PomodoroTimer \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -derivedDataPath ios/build \
+            CODE_SIGNING_ALLOWED=NO
+        env:
+          EXPO_PUBLIC_ENV: production
+          NODE_ENV: production
+      
+      - name: Verify App exists
+        run: |
+          APP_PATH="ios/build/Build/Products/Release-iphonesimulator/PomodoroTimer.app"
+          if [ -d "$APP_PATH" ]; then
+            echo "✅ App built successfully"
+            ls -lh "$APP_PATH"
+          else
+            echo "❌ App not found at $APP_PATH"
+            find ios/build -name "*.app"
+            exit 1
+          fi
+      
+      - name: Get version info
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Build version: $VERSION"
+      
+      - name: Compress App
+        run: |
+          mkdir -p artifacts
+          cd ios/build/Build/Products/Release-iphonesimulator
+          zip -r ../../../../../artifacts/pomodoro-timer-ios-simulator-v${{ steps.version.outputs.version }}.zip PomodoroTimer.app
+          echo "Compressed App to: pomodoro-timer-ios-simulator-v${{ steps.version.outputs.version }}.zip"
+      
+      - name: Upload iOS Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pomodoro-timer-v${{ steps.version.outputs.version }}-ios-simulator
+          path: artifacts/pomodoro-timer-ios-simulator-v${{ steps.version.outputs.version }}.zip
+          retention-days: 30
+      
+      - name: Create Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/pomodoro-timer-ios-simulator-v${{ steps.version.outputs.version }}.zip
+          body: |
+            ## 🍎 Pomodoro Timer v${{ steps.version.outputs.version }} (iOS Simulator)
+            
+            ### 📥 Installation
+            
+            This is a **Simulator Build**. To run it:
+            1. Download and unzip the file.
+            2. Drag `PomodoroTimer.app` onto your iOS Simulator.
+            
+            ### ✨ Features
+            
+            - **Timer Management**: Work (25min), Short Break (5min), Long Break (15min)
+            - **Session Tracking**: Automatic session persistence
+            - **Feedback System**: Audio, haptic, and notification alerts
+            
+            ### 🏗️ Technical Details
+            
+            - **Platform**: iOS Simulator (x86_64/arm64)
+            - **Build Type**: Release (Unsigned)
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notify Build Status
+    runs-on: ubuntu-latest
+    needs: build-ios
+    if: always()
+    
+    steps:
+      - name: Build status
+        run: |
+          if [ "${{ needs.build-ios.result }}" == "success" ]; then
+            echo "✅ iOS build completed successfully!"
+          elif [ "${{ needs.build-ios.result }}" == "skipped" ]; then
+            echo "⏭️ iOS build skipped."
+          else
+            echo "❌ iOS build failed!"
+            exit 1
+          fi
