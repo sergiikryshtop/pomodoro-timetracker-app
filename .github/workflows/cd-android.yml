@@ -44,6 +44,16 @@ jobs:
           npx expo prebuild --platform android --clean
         env:
           EXPO_PUBLIC_ENV: production
+
+      - name: Force Gradle 8.6 for Kotlin DSL compatibility
+        run: |
+          echo "Updating Gradle wrapper to 8.6..."
+          if [ -f android/gradle/wrapper/gradle-wrapper.properties ]; then
+            sed -i 's#distributionUrl=.*#distributionUrl=https\://services.gradle.org/distributions/gradle-8.6-bin.zip#g' android/gradle/wrapper/gradle-wrapper.properties
+            cat android/gradle/wrapper/gradle-wrapper.properties
+          else
+            echo "gradle-wrapper.properties not found" && exit 1
+          fi
       
       - name: Make Gradlew executable
         run: |
