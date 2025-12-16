@@ -50,18 +50,24 @@ jobs:
           SETTINGS_FILE=android/settings.gradle
           if [ -f "$SETTINGS_FILE" ]; then
             if ! grep -q "pluginManagement" "$SETTINGS_FILE"; then
-              cat >> "$SETTINGS_FILE" << EOF
+              TEMP_FILE="${SETTINGS_FILE}.tmp"
+              cat > "$TEMP_FILE" << 'EOF'
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        google()
+        maven { url = uri("$rootDir/../node_modules/react-native/android") }
+    }
+    includeBuild("../node_modules/react-native-gradle-plugin")
+}
 
-          pluginManagement {
-            repositories {
-              gradlePluginPortal()
-              mavenCentral()
-              google()
-              maven { url = uri("\$rootDir/../node_modules/react-native/android") }
-            }
-            includeBuild("../node_modules/react-native-gradle-plugin")
-          }
-          EOF
+EOF
+              cat "$SETTINGS_FILE" >> "$TEMP_FILE"
+              mv "$TEMP_FILE" "$SETTINGS_FILE"
+              echo "Patched $SETTINGS_FILE with pluginManagement block"
+            else
+              echo "$SETTINGS_FILE already has pluginManagement"
             fi
           else
             echo "android/settings.gradle not found" && exit 1
