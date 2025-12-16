@@ -45,6 +45,33 @@ jobs:
         env:
           EXPO_PUBLIC_ENV: production
 
+      - name: Patch Gradle settings for React Native plugin resolution
+        run: |
+          SETTINGS_FILE=android/settings.gradle
+          if [ -f "$SETTINGS_FILE" ]; then
+            echo "Patching $SETTINGS_FILE for com.facebook.react.settings plugin..."
+            # Insert pluginManagement and includeBuild if missing
+            if ! grep -q "com.facebook.react.settings" "$SETTINGS_FILE"; then
+              cat << 'EOF' >> "$SETTINGS_FILE"
+
+// --- Added by CI to ensure RN Gradle plugin resolution ---
+pluginManagement {
+  repositories {
+    gradlePluginPortal()
+    mavenCentral()
+    google()
+    maven { url = uri("$rootDir/../node_modules/react-native/android") }
+  }
+  includeBuild("../node_modules/react-native-gradle-plugin")
+}
+// --- End added block ---
+EOF
+            fi
+            echo "Patched settings.gradle:" && tail -n +1 "$SETTINGS_FILE" | sed -n '1,120p'
+          else
+            echo "android/settings.gradle not found" && exit 1
+          fi
+
       - name: Force Gradle 8.6 for Kotlin DSL compatibility
         run: |
           echo "Updating Gradle wrapper to 8.6..."
