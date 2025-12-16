@@ -65,28 +65,28 @@ jobs:
           echo "📝 Creating new settings.gradle with pluginManagement first..."
           
           cat > "$SETTINGS_FILE" <<'EOF'
-          pluginManagement {
-              repositories {
-                  gradlePluginPortal()
-                  mavenCentral()
-                  google()
-                  maven { url = uri("$rootDir/../node_modules/react-native/android") }
-              }
-              includeBuild("../node_modules/react-native-gradle-plugin")
-          }
-          
-          plugins {
-              id("com.facebook.react.settings")
-          }
-          
-          apply from: file("../node_modules/@react-native/gradle-plugin/dist/autolink-settings.gradle")
-          rootProject.name = 'pomodorotimetracker'
-          
-          extensions.findByName('developerTools')?.reactNativeDir = file("../node_modules/react-native")
-          
-          include ':app'
-          includeBuild('../node_modules/@react-native/gradle-plugin')
-          EOF
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        google()
+        maven { url = uri("$rootDir/../node_modules/react-native/android") }
+    }
+    includeBuild("../node_modules/react-native-gradle-plugin")
+}
+
+plugins {
+    id("com.facebook.react.settings")
+}
+
+apply from: file("../node_modules/@react-native/gradle-plugin/dist/autolink-settings.gradle")
+rootProject.name = 'pomodorotimetracker'
+
+extensions.findByName('developerTools')?.reactNativeDir = file("../node_modules/react-native")
+
+include ':app'
+includeBuild('../node_modules/@react-native/gradle-plugin')
+EOF
           
           echo "✅ Created new settings.gradle with pluginManagement"
       
