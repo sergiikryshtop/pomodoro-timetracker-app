@@ -1,10 +1,13 @@
 name: CD - Android Build
+run-name: CD - Android Build – ${{ github.ref_name }}
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Allow manual trigger
+      - feature/*
+      - fix/*
+  workflow_dispatch:
 
 permissions:
   contents: write  # Required for creating releases and uploading assets
@@ -12,6 +15,11 @@ permissions:
 jobs:
   build-android:
     name: Build Android APK
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main' ||
+      contains(github.event.head_commit.modified, '.github/workflows/cd-android.yml') ||
+      contains(github.event.head_commit.added, '.github/workflows/cd-android.yml')
     runs-on: ubuntu-latest
     
     steps:
@@ -45,44 +53,6 @@ jobs:
         env:
           EXPO_PUBLIC_ENV: production
 
-      - name: Patch Gradle settings for React Native plugin resolution
-        run: |
-          SETTINGS_FILE=android/settings.gradle
-          if [ -f "$SETTINGS_FILE" ]; then
-            if ! grep -q "pluginManagement" "$SETTINGS_FILE"; then
-              TEMP_FILE="${SETTINGS_FILE}.tmp"
-              cat > "$TEMP_FILE" << 'EOF'
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-        maven { url = uri("$rootDir/../node_modules/react-native/android") }
-    }
-    includeBuild("../node_modules/react-native-gradle-plugin")
-}
-
-EOF
-              cat "$SETTINGS_FILE" >> "$TEMP_FILE"
-              mv "$TEMP_FILE" "$SETTINGS_FILE"
-              echo "Patched $SETTINGS_FILE with pluginManagement block"
-            else
-              echo "$SETTINGS_FILE already has pluginManagement"
-            fi
-          else
-            echo "android/settings.gradle not found" && exit 1
-          fi
-
-      - name: Force Gradle 8.6 for Kotlin DSL compatibility
-        run: |
-          echo "Updating Gradle wrapper to 8.6..."
-          if [ -f android/gradle/wrapper/gradle-wrapper.properties ]; then
-            sed -i 's#distributionUrl=.*#distributionUrl=https\://services.gradle.org/distributions/gradle-8.6-bin.zip#g' android/gradle/wrapper/gradle-wrapper.properties
-            cat android/gradle/wrapper/gradle-wrapper.properties
-          else
-            echo "gradle-wrapper.properties not found" && exit 1
-          fi
-      
       - name: Make Gradlew executable
         run: |
           cd android
@@ -95,6 +65,7 @@ EOF
           ./gradlew assembleRelease --no-daemon --stacktrace
         env:
           EXPO_PUBLIC_ENV: production
+          NODE_ENV: production
       
       - name: Verify APK exists
         run: |
@@ -135,7 +106,7 @@ EOF
           retention-days: 30
       
       - name: Create Release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.version }}
@@ -217,6 +188,8 @@ EOF
         run: |
           if [ "${{ needs.build-android.result }}" == "success" ]; then
             echo "✅ Android build completed successfully!"
+          elif [ "${{ needs.build-android.result }}" == "skipped" ]; then
+            echo "⏭️ Android build skipped."
           else
             echo "❌ Android build failed!"
             exit 1

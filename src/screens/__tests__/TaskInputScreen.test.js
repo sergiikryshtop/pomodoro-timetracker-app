@@ -40,9 +40,14 @@ describe('TaskInputScreen', () => {
   };
 
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
     useTimer.mockReturnValue(mockTimerContext);
     taskStorage.getSuggestions.mockResolvedValue([]);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('should render correctly', () => {
@@ -100,9 +105,12 @@ describe('TaskInputScreen', () => {
     const taskInput = getByPlaceholderText('What are you working on?');
     fireEvent.changeText(taskInput, 'Test');
 
+    // Fast-forward debounce timer
+    jest.advanceTimersByTime(300);
+
     await waitFor(() => {
       expect(taskStorage.getSuggestions).toHaveBeenCalledWith('Test', 10);
-    }, { timeout: 500 });
+    });
   });
 
   it('should not load suggestions when input is < 3 characters', async () => {
@@ -113,9 +121,12 @@ describe('TaskInputScreen', () => {
     const taskInput = getByPlaceholderText('What are you working on?');
     fireEvent.changeText(taskInput, 'Te');
 
+    // Fast-forward debounce timer
+    jest.advanceTimersByTime(300);
+
     await waitFor(() => {
       expect(taskStorage.getSuggestions).not.toHaveBeenCalled();
-    }, { timeout: 500 });
+    });
   });
 
   it('should save task and comment on Save button press', () => {
