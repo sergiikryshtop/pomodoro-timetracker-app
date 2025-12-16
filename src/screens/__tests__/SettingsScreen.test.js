@@ -48,12 +48,17 @@ describe('SettingsScreen', () => {
   const mockUpdateSettings = jest.fn();
 
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
     useTimer.mockReturnValue({
       settings: mockSettings,
       updateSettings: mockUpdateSettings,
     });
     sessionStorage.clearAllSessions.mockResolvedValue(true);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('should render correctly', () => {

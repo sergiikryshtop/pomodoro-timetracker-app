@@ -42,7 +42,10 @@
         {
           "color": "#6366F1"
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-asset",
+      "expo-font"
     ],
     "extra": {
       "eas": {
