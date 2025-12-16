@@ -76,6 +76,7 @@ jobs:
           echo '        mavenCentral()' >> "$TEMP_FILE"
           echo '        google()' >> "$TEMP_FILE"
           echo '    }' >> "$TEMP_FILE"
+          echo '    includeBuild("../node_modules/@react-native/gradle-plugin")' >> "$TEMP_FILE"
           echo '}' >> "$TEMP_FILE"
           echo '' >> "$TEMP_FILE"
           
