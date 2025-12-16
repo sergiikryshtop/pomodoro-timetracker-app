@@ -15,6 +15,11 @@ permissions:
 jobs:
   build-android:
     name: Build Android APK
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main' ||
+      contains(github.event.head_commit.modified, '.github/workflows/cd-android.yml') ||
+      contains(github.event.head_commit.added, '.github/workflows/cd-android.yml')
     runs-on: ubuntu-latest
     
     steps:
@@ -101,7 +106,7 @@ jobs:
           retention-days: 30
       
       - name: Create Release
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v1
         with:
           tag_name: v${{ steps.version.outputs.version }}
