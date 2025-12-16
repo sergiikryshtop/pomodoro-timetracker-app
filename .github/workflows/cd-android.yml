@@ -53,36 +53,35 @@ jobs:
           echo "=== Original settings.gradle (first 30 lines) ==="
           head -30 android/settings.gradle || cat android/settings.gradle
       
-      - name: Patch Gradle settings for React Native plugin resolution  
+      - name: Patch Gradle settings - Add pluginManagement before plugins block
         run: |
           SETTINGS_FILE=android/settings.gradle
           if [ ! -f "$SETTINGS_FILE" ]; then
             echo "❌ android/settings.gradle not found"
             exit 1
           fi
-          echo "📝 Creating new settings.gradle with pluginManagement first..."
-          echo 'pluginManagement {' > "$SETTINGS_FILE"
-          echo '    repositories {' >> "$SETTINGS_FILE"
-          echo '        gradlePluginPortal()' >> "$SETTINGS_FILE"
-          echo '        mavenCentral()' >> "$SETTINGS_FILE"
-          echo '        google()' >> "$SETTINGS_FILE"
-          echo '        maven { url = uri("$rootDir/../node_modules/react-native/android") }' >> "$SETTINGS_FILE"
-          echo '    }' >> "$SETTINGS_FILE"
-          echo '    includeBuild("../node_modules/react-native-gradle-plugin")' >> "$SETTINGS_FILE"
-          echo '}' >> "$SETTINGS_FILE"
-          echo '' >> "$SETTINGS_FILE"
-          echo 'plugins {' >> "$SETTINGS_FILE"
-          echo '    id("com.facebook.react.settings")' >> "$SETTINGS_FILE"
-          echo '}' >> "$SETTINGS_FILE"
-          echo '' >> "$SETTINGS_FILE"
-          echo 'apply from: file("../node_modules/@react-native/gradle-plugin/dist/autolink-settings.gradle")' >> "$SETTINGS_FILE"
-          echo 'rootProject.name = '"'"'pomodorotimetracker'"'"'' >> "$SETTINGS_FILE"
-          echo '' >> "$SETTINGS_FILE"
-          echo 'extensions.findByName('"'"'developerTools'"'"')?.reactNativeDir = file("../node_modules/react-native")' >> "$SETTINGS_FILE"
-          echo '' >> "$SETTINGS_FILE"
-          echo 'include '"'"':app'"'"'' >> "$SETTINGS_FILE"
-          echo 'includeBuild('"'"'../node_modules/@react-native/gradle-plugin'"'"')' >> "$SETTINGS_FILE"
-          echo "✅ Created new settings.gradle with pluginManagement"
+          
+          echo "📝 Checking if settings.gradle needs patching..."
+          if grep -q "pluginManagement" "$SETTINGS_FILE"; then
+            echo "✅ pluginManagement already exists"
+            exit 0
+          fi
+          
+          echo "📝 Prepending pluginManagement block..."
+          TEMP_FILE="${SETTINGS_FILE}.new"
+          
+          echo 'pluginManagement {' > "$TEMP_FILE"
+          echo '    repositories {' >> "$TEMP_FILE"
+          echo '        gradlePluginPortal()' >> "$TEMP_FILE"
+          echo '        mavenCentral()' >> "$TEMP_FILE"
+          echo '        google()' >> "$TEMP_FILE"
+          echo '    }' >> "$TEMP_FILE"
+          echo '}' >> "$TEMP_FILE"
+          echo '' >> "$TEMP_FILE"
+          
+          cat "$SETTINGS_FILE" >> "$TEMP_FILE"
+          mv "$TEMP_FILE" "$SETTINGS_FILE"
+          echo "✅ Patched settings.gradle"
       
       - name: Debug - Show patched settings.gradle
         run: |
