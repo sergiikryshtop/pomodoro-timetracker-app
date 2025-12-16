@@ -5,8 +5,6 @@ on:
   push:
     branches:
       - main
-      - feature/*
-      - fix/*
   workflow_dispatch:
 
 permissions:
@@ -15,11 +13,6 @@ permissions:
 jobs:
   build-ios:
     name: Build iOS Simulator App
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.ref == 'refs/heads/main' ||
-      contains(github.event.head_commit.modified, '.github/workflows/cd-ios.yml') ||
-      contains(github.event.head_commit.added, '.github/workflows/cd-ios.yml')
     runs-on: macos-latest
     
     steps:
