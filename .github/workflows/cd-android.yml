@@ -48,6 +48,11 @@ jobs:
         env:
           EXPO_PUBLIC_ENV: production
 
+      - name: Debug - Show original settings.gradle
+        run: |
+          echo "=== Original settings.gradle (first 30 lines) ==="
+          head -30 android/settings.gradle || cat android/settings.gradle
+      
       - name: Patch Gradle settings for React Native plugin resolution
         run: |
           SETTINGS_FILE=android/settings.gradle
@@ -78,6 +83,11 @@ jobs:
           cat "$SETTINGS_FILE" >> "$TEMP_FILE"
           mv "$TEMP_FILE" "$SETTINGS_FILE"
           echo "✅ Patched successfully"
+      
+      - name: Debug - Show patched settings.gradle
+        run: |
+          echo "=== Patched settings.gradle (first 30 lines) ==="
+          head -30 android/settings.gradle
 
       - name: Force Gradle 8.6 for Kotlin DSL compatibility
         run: |
