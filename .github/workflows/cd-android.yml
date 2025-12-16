@@ -188,6 +188,8 @@ jobs:
         run: |
           if [ "${{ needs.build-android.result }}" == "success" ]; then
             echo "✅ Android build completed successfully!"
+          elif [ "${{ needs.build-android.result }}" == "skipped" ]; then
+            echo "⏭️ Android build skipped."
           else
             echo "❌ Android build failed!"
             exit 1
