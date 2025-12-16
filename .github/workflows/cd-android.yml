@@ -51,30 +51,33 @@ jobs:
       - name: Patch Gradle settings for React Native plugin resolution
         run: |
           SETTINGS_FILE=android/settings.gradle
-          if [ -f "$SETTINGS_FILE" ]; then
-            if ! grep -q "pluginManagement" "$SETTINGS_FILE"; then
-              TEMP_FILE="${SETTINGS_FILE}.tmp"
-              cat > "$TEMP_FILE" << 'EOF'
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-        google()
-        maven { url = uri("$rootDir/../node_modules/react-native/android") }
-    }
-    includeBuild("../node_modules/react-native-gradle-plugin")
-}
-
-EOF
-              cat "$SETTINGS_FILE" >> "$TEMP_FILE"
-              mv "$TEMP_FILE" "$SETTINGS_FILE"
-              echo "Patched $SETTINGS_FILE with pluginManagement block"
-            else
-              echo "$SETTINGS_FILE already has pluginManagement"
-            fi
-          else
-            echo "android/settings.gradle not found" && exit 1
+          
+          if [ ! -f "$SETTINGS_FILE" ]; then
+            echo "❌ android/settings.gradle not found"
+            exit 1
           fi
+          
+          if grep -q "pluginManagement" "$SETTINGS_FILE"; then
+            echo "✅ $SETTINGS_FILE already has pluginManagement"
+            exit 0
+          fi
+          
+          echo "📝 Patching $SETTINGS_FILE with pluginManagement block..."
+          TEMP_FILE="${SETTINGS_FILE}.tmp"
+          
+          printf 'pluginManagement {\n' > "$TEMP_FILE"
+          printf '    repositories {\n' >> "$TEMP_FILE"
+          printf '        gradlePluginPortal()\n' >> "$TEMP_FILE"
+          printf '        mavenCentral()\n' >> "$TEMP_FILE"
+          printf '        google()\n' >> "$TEMP_FILE"
+          printf '        maven { url = uri("$rootDir/../node_modules/react-native/android") }\n' >> "$TEMP_FILE"
+          printf '    }\n' >> "$TEMP_FILE"
+          printf '    includeBuild("../node_modules/react-native-gradle-plugin")\n' >> "$TEMP_FILE"
+          printf '}\n\n' >> "$TEMP_FILE"
+          
+          cat "$SETTINGS_FILE" >> "$TEMP_FILE"
+          mv "$TEMP_FILE" "$SETTINGS_FILE"
+          echo "✅ Patched successfully"
 
       - name: Force Gradle 8.6 for Kotlin DSL compatibility
         run: |
