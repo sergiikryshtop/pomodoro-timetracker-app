@@ -70,7 +70,8 @@ jobs:
             echo "⚠️ Found problematic com.facebook.react.settings plugin. Removing plugins block..."
             sed -i '/plugins {/,/}/d' "$SETTINGS_FILE"
             # Also remove the configuration block that uses the plugin class
-            sed -i '/com.facebook.react.ReactSettingsExtension/d' "$SETTINGS_FILE"
+            # Use range deletion to remove the entire block including the closing brace
+            sed -i '/com.facebook.react.ReactSettingsExtension/,/}/d' "$SETTINGS_FILE"
             echo "✅ Removed plugins block and configuration"
           else
             echo "ℹ️ No com.facebook.react.settings plugin found"
