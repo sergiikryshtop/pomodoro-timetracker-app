@@ -19,12 +19,16 @@ const TimerScreen = () => {
     resetTimer,
     startWork,
     startBreak,
+    startShortBreak,
+    startLongBreak,
     skipBreak,
     settings,
   } = useTimer();
 
   const getActiveColor = () => {
-    return theme.colors.primary;
+    if (intervalType === 'work') return theme.colors.primary;
+    if (intervalType === 'longBreak') return theme.colors.longBreakColor || theme.colors.breakColor || theme.colors.primary;
+    return theme.colors.breakColor || theme.colors.primary;
   };
 
   const handleStartPause = () => {
@@ -141,6 +145,34 @@ const TimerScreen = () => {
           {getButtonLabel()}
         </Button>
 
+        {timerState === 'completed' && intervalType === 'work' && !settings?.autoStartBreaks && (
+          <Card style={[styles.breakSelectionCard, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content>
+              <Text variant="labelLarge" style={styles.breakSelectionTitle}>
+                Choose break type:
+              </Text>
+              <View style={styles.breakButtonsRow}>
+                <Button
+                  mode="outlined"
+                  onPress={startShortBreak}
+                  style={styles.breakButton}
+                  icon="coffee"
+                >
+                  Short
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={startLongBreak}
+                  style={styles.breakButton}
+                  icon="nature"
+                >
+                  Long
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+
         <View style={styles.secondaryControls}>
           <Button
             mode="outlined"
@@ -160,6 +192,17 @@ const TimerScreen = () => {
               icon="skip-next"
             >
               Skip Break
+            </Button>
+          )}
+
+          {timerState === 'completed' && intervalType === 'work' && !settings?.autoStartBreaks && (
+            <Button
+              mode="outlined"
+              onPress={startWork}
+              style={styles.controlButton}
+              icon="play-circle"
+            >
+              Next Focus
             </Button>
           )}
         </View>
@@ -237,6 +280,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     gap: 12,
+    flexWrap: 'wrap',
+  },
+  breakSelectionCard: {
+    marginVertical: 12,
+    elevation: 2,
+  },
+  breakSelectionTitle: {
+    marginBottom: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  breakButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  breakButton: {
+    flex: 1,
+    minWidth: '45%',
   },
   fab: {
     position: 'absolute',

@@ -303,6 +303,20 @@ export const TimerProvider = ({ children }) => {
     startTimer();
   };
 
+  const startShortBreak = () => {
+    setIntervalType('shortBreak');
+    setTimeRemaining((settings?.shortBreakDuration || 5) * 60);
+    resetTimer();
+    startTimer();
+  };
+
+  const startLongBreak = () => {
+    setIntervalType('longBreak');
+    setTimeRemaining((settings?.longBreakDuration || 15) * 60);
+    resetTimer();
+    startTimer();
+  };
+
   const skipBreak = () => {
     resetTimer();
     setIntervalType('work');
@@ -354,6 +368,8 @@ export const TimerProvider = ({ children }) => {
     resetTimer,
     startWork,
     startBreak,
+    startShortBreak,
+    startLongBreak,
     skipBreak,
     setCurrentTask,
     setCurrentComment,

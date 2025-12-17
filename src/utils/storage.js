@@ -215,7 +215,7 @@ export const settingsStorage = {
       shortBreakDuration: 5, // minutes
       longBreakDuration: 15, // minutes
       pomodorosUntilLongBreak: 4,
-      autoStartBreaks: false,
+      autoStartBreaks: true,
       autoStartNextPomodoro: false,
       soundEnabled: true,
       vibrationEnabled: true,
