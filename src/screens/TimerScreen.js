@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Button, Text, Card, useTheme, FAB } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import CircularTimer from '../components/CircularTimer';
 import { useTimer } from '../context/TimerContext';
@@ -100,7 +100,11 @@ const TimerScreen = () => {
         <Card style={[styles.taskCard, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <View style={styles.taskRow}>
-              <Icon name="check-circle" size={20} color={theme.colors.primary} />
+              <MaterialCommunityIcons
+                name="check-circle"
+                size={20}
+                color={theme.colors.primary}
+              />
               <Text variant="titleMedium" style={styles.taskText}>
                 {currentTask}
               </Text>
@@ -111,7 +115,7 @@ const TimerScreen = () => {
 
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Icon
+          <MaterialCommunityIcons
             name="timer-sand"
             size={24}
             color={theme.colors.primary}

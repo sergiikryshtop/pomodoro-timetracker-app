@@ -5,8 +5,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import TimerScreen from './src/screens/TimerScreen';
 import ReportsScreen from './src/screens/ReportsScreen';
@@ -35,6 +35,46 @@ function TimerStack() {
   );
 }
 
+function Tabs() {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === 'Timer') {
+            iconName = focused ? 'timer' : 'timer-outline';
+          } else if (route.name === 'Reports') {
+            iconName = focused ? 'chart-box' : 'chart-box-outline';
+          } else if (route.name === 'Settings') {
+            iconName = focused ? 'cog' : 'cog-outline';
+          }
+
+          return (
+            <MaterialCommunityIcons name={iconName} size={size} color={color} />
+          );
+        },
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+        tabBarStyle: {
+          height: 64 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
+          paddingTop: 8,
+        },
+        safeAreaInsets: { bottom: Math.max(insets.bottom, 8) },
+        tabBarHideOnKeyboard: true,
+      })}
+    >
+      <Tab.Screen name="Timer" component={TimerStack} />
+      <Tab.Screen name="Reports" component={ReportsScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
+    </Tab.Navigator>
+  );
+}
+
 function App() {
   return (
     <SafeAreaProvider>
@@ -42,30 +82,7 @@ function App() {
         <TimerProvider>
           <NavigationContainer>
             <StatusBar style="auto" />
-            <Tab.Navigator
-              screenOptions={({ route }) => ({
-                tabBarIcon: ({ focused, color, size }) => {
-                  let iconName;
-
-                  if (route.name === 'Timer') {
-                    iconName = focused ? 'timer' : 'timer-outline';
-                  } else if (route.name === 'Reports') {
-                    iconName = focused ? 'chart-box' : 'chart-box-outline';
-                  } else if (route.name === 'Settings') {
-                    iconName = focused ? 'cog' : 'cog-outline';
-                  }
-
-                  return <Icon name={iconName} size={size} color={color} />;
-                },
-                tabBarActiveTintColor: theme.colors.primary,
-                tabBarInactiveTintColor: 'gray',
-                headerShown: false,
-              })}
-            >
-              <Tab.Screen name="Timer" component={TimerStack} />
-              <Tab.Screen name="Reports" component={ReportsScreen} />
-              <Tab.Screen name="Settings" component={SettingsScreen} />
-            </Tab.Navigator>
+            <Tabs />
           </NavigationContainer>
         </TimerProvider>
       </PaperProvider>
