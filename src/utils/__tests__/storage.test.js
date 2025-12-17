@@ -194,7 +194,7 @@ describe('Storage Utilities', () => {
         shortBreakDuration: 5,
         longBreakDuration: 15,
         pomodorosUntilLongBreak: 4,
-        autoStartBreaks: false,
+        autoStartBreaks: true,
         autoStartNextPomodoro: false,
         soundEnabled: true,
         vibrationEnabled: true,

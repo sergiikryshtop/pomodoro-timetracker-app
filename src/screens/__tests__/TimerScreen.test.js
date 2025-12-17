@@ -207,7 +207,7 @@ describe('TimerScreen', () => {
     expect(queryByText('Skip Break')).toBeNull();
   });
 
-  it('should show skip break confirmation dialog when pressing Skip Break', () => {
+  it('should skip break immediately without confirmation when pressing Skip Break', () => {
     mockTimerContext.intervalType = 'shortBreak';
     useTimer.mockReturnValue(mockTimerContext);
 
@@ -216,32 +216,20 @@ describe('TimerScreen', () => {
     const skipButton = getByText('Skip Break');
     fireEvent.press(skipButton);
 
-    expect(Alert.alert).toHaveBeenCalledWith(
-      'Skip Break',
-      'Are you sure you want to skip this break?',
-      expect.arrayContaining([
-        expect.objectContaining({ text: 'Cancel' }),
-        expect.objectContaining({ text: 'Skip' })
-      ])
-    );
+    expect(Alert.alert).not.toHaveBeenCalled();
+    expect(mockTimerContext.skipBreak).toHaveBeenCalled();
   });
 
-  it('should skip break when confirming skip dialog', () => {
+  it('should call skipBreak on pressing Skip Break', () => {
     mockTimerContext.intervalType = 'shortBreak';
     useTimer.mockReturnValue(mockTimerContext);
-    
-    Alert.alert = jest.fn((title, message, buttons) => {
-      const skipButton = buttons.find(btn => btn.text === 'Skip');
-      if (skipButton && skipButton.onPress) {
-        skipButton.onPress();
-      }
-    });
 
     const { getByText } = renderWithProviders(<TimerScreen />);
 
     const skipButton = getByText('Skip Break');
     fireEvent.press(skipButton);
 
+    expect(Alert.alert).not.toHaveBeenCalled();
     expect(mockTimerContext.skipBreak).toHaveBeenCalled();
   });
 

@@ -62,18 +62,7 @@ const TimerScreen = () => {
 
   const handleSkipBreak = () => {
     if (intervalType !== 'work') {
-      Alert.alert(
-        'Skip Break',
-        'Are you sure you want to skip this break?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Skip',
-            style: 'destructive',
-            onPress: skipBreak,
-          },
-        ]
-      );
+      skipBreak();
     }
   };
 
