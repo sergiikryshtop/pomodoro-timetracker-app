@@ -36,6 +36,7 @@ describe('TimerContext', () => {
     Notifications.requestPermissionsAsync.mockResolvedValue({ status: 'granted' });
     Notifications.scheduleNotificationAsync.mockResolvedValue('notification-id');
     Notifications.setNotificationHandler.mockResolvedValue();
+    Notifications.setNotificationChannelAsync = jest.fn().mockResolvedValue();
     Audio.setAudioModeAsync.mockResolvedValue();
     Haptics.notificationAsync.mockResolvedValue();
   });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Button, Text, Card, useTheme, FAB } from 'react-native-paper';
-import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import CircularTimer from '../components/CircularTimer';
 import { useTimer } from '../context/TimerContext';
@@ -19,12 +19,16 @@ const TimerScreen = () => {
     resetTimer,
     startWork,
     startBreak,
+    startShortBreak,
+    startLongBreak,
     skipBreak,
     settings,
   } = useTimer();
 
   const getActiveColor = () => {
-    return theme.colors.primary;
+    if (intervalType === 'work') return theme.colors.primary;
+    if (intervalType === 'longBreak') return theme.colors.longBreakColor || theme.colors.breakColor || theme.colors.primary;
+    return theme.colors.breakColor || theme.colors.primary;
   };
 
   const handleStartPause = () => {
@@ -58,18 +62,7 @@ const TimerScreen = () => {
 
   const handleSkipBreak = () => {
     if (intervalType !== 'work') {
-      Alert.alert(
-        'Skip Break',
-        'Are you sure you want to skip this break?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Skip',
-            style: 'destructive',
-            onPress: skipBreak,
-          },
-        ]
-      );
+      skipBreak();
     }
   };
 
@@ -100,7 +93,11 @@ const TimerScreen = () => {
         <Card style={[styles.taskCard, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <View style={styles.taskRow}>
-              <Icon name="check-circle" size={20} color={theme.colors.primary} />
+              <MaterialCommunityIcons
+                name="check-circle"
+                size={20}
+                color={theme.colors.primary}
+              />
               <Text variant="titleMedium" style={styles.taskText}>
                 {currentTask}
               </Text>
@@ -111,7 +108,7 @@ const TimerScreen = () => {
 
       <View style={styles.statsContainer}>
         <View style={styles.statItem}>
-          <Icon
+          <MaterialCommunityIcons
             name="timer-sand"
             size={24}
             color={theme.colors.primary}
@@ -137,6 +134,34 @@ const TimerScreen = () => {
           {getButtonLabel()}
         </Button>
 
+        {timerState === 'completed' && intervalType === 'work' && !settings?.autoStartBreaks && (
+          <Card style={[styles.breakSelectionCard, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content>
+              <Text variant="labelLarge" style={styles.breakSelectionTitle}>
+                Choose break type:
+              </Text>
+              <View style={styles.breakButtonsRow}>
+                <Button
+                  mode="outlined"
+                  onPress={startShortBreak}
+                  style={styles.breakButton}
+                  icon="coffee"
+                >
+                  Short
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={startLongBreak}
+                  style={styles.breakButton}
+                  icon="nature"
+                >
+                  Long
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+
         <View style={styles.secondaryControls}>
           <Button
             mode="outlined"
@@ -156,6 +181,17 @@ const TimerScreen = () => {
               icon="skip-next"
             >
               Skip Break
+            </Button>
+          )}
+
+          {timerState === 'completed' && intervalType === 'work' && !settings?.autoStartBreaks && (
+            <Button
+              mode="outlined"
+              onPress={startWork}
+              style={styles.controlButton}
+              icon="play-circle"
+            >
+              Next Focus
             </Button>
           )}
         </View>
@@ -233,6 +269,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     gap: 12,
+    flexWrap: 'wrap',
+  },
+  breakSelectionCard: {
+    marginVertical: 12,
+    elevation: 2,
+  },
+  breakSelectionTitle: {
+    marginBottom: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  breakButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  breakButton: {
+    flex: 1,
+    minWidth: '45%',
   },
   fab: {
     position: 'absolute',

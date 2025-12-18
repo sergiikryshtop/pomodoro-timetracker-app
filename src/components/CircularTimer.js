@@ -35,7 +35,13 @@ const CircularTimer = ({ size = 300, strokeWidth = 12 }) => {
   });
 
   const getColor = () => {
-    return theme.colors.primary;
+    if (intervalType === 'work') {
+      return theme.colors.primary;
+    }
+    if (intervalType === 'longBreak') {
+      return theme.colors.longBreakColor || theme.colors.breakColor || theme.colors.primary;
+    }
+    return theme.colors.breakColor || theme.colors.primary;
   };
 
   return (
@@ -80,11 +86,7 @@ const CircularTimer = ({ size = 300, strokeWidth = 12 }) => {
           variant="labelLarge"
           style={[styles.typeText, { color: theme.colors.text }]}
         >
-          {intervalType === 'work'
-            ? 'Focus Time'
-            : intervalType === 'longBreak'
-            ? 'Long Break'
-            : 'Short Break'}
+          {intervalType === 'work' ? 'Focus Time' : 'Break Time'}
         </Text>
       </View>
     </View>

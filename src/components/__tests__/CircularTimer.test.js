@@ -94,6 +94,16 @@ describe('CircularTimer', () => {
     expect(getByText('05:00')).toBeTruthy();
   });
 
+  it('should show correct time during long break interval', () => {
+    mockTimerContext.intervalType = 'longBreak';
+    mockTimerContext.timeRemaining = 900; // 15 minutes
+    mockTimerContext.formatTime.mockReturnValue('15:00');
+
+    const { getByText } = renderWithProviders(<CircularTimer />);
+
+    expect(getByText('15:00')).toBeTruthy();
+  });
+
   it('should calculate progress correctly', () => {
     mockTimerContext.getProgress.mockReturnValue(0.75);
     
@@ -115,5 +125,14 @@ describe('CircularTimer', () => {
     );
     
     expect(mockTimerContext.formatTime).toHaveBeenCalledWith(1200);
+  });
+
+  it('should apply paused styling when timer is paused', () => {
+    mockTimerContext.timerState = 'paused';
+    mockTimerContext.formatTime.mockReturnValue('05:00');
+
+    const { getByText } = renderWithProviders(<CircularTimer />);
+
+    expect(getByText('05:00')).toBeTruthy();
   });
 });

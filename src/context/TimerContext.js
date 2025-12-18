@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import * as Haptics from 'expo-haptics';
 import { settingsStorage, sessionStorage, taskStorage } from '../utils/storage';
 
 const TimerContext = createContext();
+const NOTIFICATION_CHANNEL_ID = 'timer-complete';
 
 export const useTimer = () => {
   const context = useContext(TimerContext);
@@ -30,6 +31,7 @@ export const TimerProvider = ({ children }) => {
   const intervalRef = useRef(null);
   const appState = useRef(AppState.currentState);
   const backgroundTimeRef = useRef(null);
+  const lastTickRef = useRef(null);
 
   // Load settings on mount
   useEffect(() => {
@@ -54,6 +56,17 @@ export const TimerProvider = ({ children }) => {
         shouldSetBadge: false,
       }),
     });
+
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
+        name: 'Timer Complete',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 500, 400, 500],
+        sound: 'default',
+        enableVibrate: true,
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      });
+    }
   };
 
   // Request notification permissions
@@ -78,9 +91,11 @@ export const TimerProvider = ({ children }) => {
   // Handle timer completion with useCallback to prevent stale closures
   const handleTimerComplete = useCallback(async () => {
     setTimerState('completed');
+    const shouldPlaySound = settings?.soundEnabled !== false;
+    const shouldVibrate = settings?.vibrationEnabled !== false;
     
     // Play sound
-    if (settings?.soundEnabled) {
+    if (shouldPlaySound) {
       try {
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       } catch (error) {
@@ -89,7 +104,7 @@ export const TimerProvider = ({ children }) => {
     }
 
     // Vibrate
-    if (settings?.vibrationEnabled) {
+    if (shouldVibrate) {
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (error) {
@@ -105,9 +120,12 @@ export const TimerProvider = ({ children }) => {
           body: intervalType === 'work' 
             ? 'Time for a break!' 
             : 'Ready to get back to work?',
-          sound: true,
+          sound: shouldPlaySound ? 'default' : undefined,
         },
         trigger: null,
+        ...(Platform.OS === 'android'
+          ? { channelId: NOTIFICATION_CHANNEL_ID }
+          : {}),
       });
     } catch (error) {
       console.error('Error scheduling notification:', error);
@@ -151,16 +169,23 @@ export const TimerProvider = ({ children }) => {
   // Timer interval
   useEffect(() => {
     if (timerState === 'running') {
+      lastTickRef.current = Date.now();
       intervalRef.current = setInterval(() => {
         setTimeRemaining(prev => {
-          if (prev <= 1) {
+          const now = Date.now();
+          const elapsedSeconds = lastTickRef.current
+            ? Math.max(1, Math.floor((now - lastTickRef.current) / 1000))
+            : 1;
+          lastTickRef.current = now;
+          const next = Math.max(0, prev - elapsedSeconds);
+          if (next === 0 && prev > 0) {
             handleTimerComplete();
-            return 0;
           }
-          return prev - 1;
+          return next;
         });
       }, 1000);
     } else {
+      lastTickRef.current = null;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -193,6 +218,7 @@ export const TimerProvider = ({ children }) => {
             return newTime;
           });
           backgroundTimeRef.current = null;
+          lastTickRef.current = Date.now();
         }
       } else if (
         appState.current === 'active' &&
@@ -201,6 +227,7 @@ export const TimerProvider = ({ children }) => {
         // App went to background, save current time only if running
         if (timerState === 'running') {
           backgroundTimeRef.current = Date.now();
+          lastTickRef.current = Date.now();
         }
       }
 
@@ -228,12 +255,15 @@ export const TimerProvider = ({ children }) => {
       setPausedTime(null);
     }
     setTimerState('running');
+    lastTickRef.current = Date.now();
     backgroundTimeRef.current = Date.now();
   };
 
   const pauseTimer = () => {
     setTimerState('paused');
     setPausedTime(new Date());
+    backgroundTimeRef.current = null;
+    lastTickRef.current = null;
   };
 
   const resetTimer = () => {
@@ -249,6 +279,8 @@ export const TimerProvider = ({ children }) => {
     setTotalPausedTime(0);
     setCurrentTask('');
     setCurrentComment('');
+    backgroundTimeRef.current = null;
+    lastTickRef.current = null;
   };
 
   const startWork = () => {
@@ -267,6 +299,20 @@ export const TimerProvider = ({ children }) => {
       ? (settings?.longBreakDuration || 15) * 60
       : (settings?.shortBreakDuration || 5) * 60
     );
+    resetTimer();
+    startTimer();
+  };
+
+  const startShortBreak = () => {
+    setIntervalType('shortBreak');
+    setTimeRemaining((settings?.shortBreakDuration || 5) * 60);
+    resetTimer();
+    startTimer();
+  };
+
+  const startLongBreak = () => {
+    setIntervalType('longBreak');
+    setTimeRemaining((settings?.longBreakDuration || 15) * 60);
     resetTimer();
     startTimer();
   };
@@ -322,6 +368,8 @@ export const TimerProvider = ({ children }) => {
     resetTimer,
     startWork,
     startBreak,
+    startShortBreak,
+    startLongBreak,
     skipBreak,
     setCurrentTask,
     setCurrentComment,
