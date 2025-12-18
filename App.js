@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import TimerScreen from './src/screens/TimerScreen';
@@ -87,34 +87,7 @@ function App() {
         <TimerProvider>
           <NavigationContainer>
             <StatusBar style="auto" />
-<<<<<<< HEAD
             <Tabs />
-=======
-            <Tab.Navigator
-              screenOptions={({ route }) => ({
-                tabBarIcon: ({ focused, color, size }) => {
-                  let iconName;
-
-                  if (route.name === 'Timer') {
-                    iconName = focused ? 'timer' : 'timer-outline';
-                  } else if (route.name === 'Reports') {
-                    iconName = focused ? 'chart-box' : 'chart-box-outline';
-                  } else if (route.name === 'Settings') {
-                    iconName = focused ? 'cog' : 'cog-outline';
-                  }
-
-                  return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
-                },
-                tabBarActiveTintColor: theme.colors.primary,
-                tabBarInactiveTintColor: 'gray',
-                headerShown: false,
-              })}
-            >
-              <Tab.Screen name="Timer" component={TimerStack} />
-              <Tab.Screen name="Reports" component={ReportsScreen} />
-              <Tab.Screen name="Settings" component={SettingsScreen} />
-            </Tab.Navigator>
->>>>>>> origin/main
           </NavigationContainer>
         </TimerProvider>
       </PaperProvider>
