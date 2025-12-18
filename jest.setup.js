@@ -77,30 +77,12 @@ jest.mock('react-native-reanimated', () => ({
   createAnimatedComponent: jest.fn((component) => component),
 }));
 
-// Mock @expo/vector-icons to prevent native module resolution issues
-jest.mock('@expo/vector-icons', () => ({
-  MaterialCommunityIcons: () => null,
-  AntDesign: () => null,
-  Entypo: () => null,
-  EvilIcons: () => null,
-  Feather: () => null,
-  FontAwesome: () => null,
-  FontAwesome5: () => null,
-  FontAwesome6: () => null,
-  Fontisto: () => null,
-  Foundation: () => null,
-  Ionicons: () => null,
-  MaterialIcons: () => null,
-  Octicons: () => null,
-  SimpleLineIcons: () => null,
-  Zocial: () => null,
-  createIconSet: jest.fn(() => () => null),
-}));
-
-// Mock expo-font to prevent EventEmitter resolution issues
-jest.mock('expo-font', () => ({
-  loadAsync: jest.fn(() => Promise.resolve()),
-  isLoaded: jest.fn(() => true),
-  isLoading: jest.fn(() => false),
-}));
-
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const { View } = require('react-native');
+  return {
+    MaterialCommunityIcons: (props) => <View {...props} testID="icon" />,
+    Ionicons: (props) => <View {...props} testID="icon" />,
+    FontAwesome: (props) => <View {...props} testID="icon" />,
+  };
+});
